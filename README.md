@@ -20,3 +20,13 @@ python -m venv .venv
 في خدمة الباكند التي تشغّل عامل عمليات الفندق، اضبط OMDA_MANAGEMENT_URL بعنوان اللوحة الأساسي وOMDA_MANAGEMENT_TOKEN بالرمز. يمكن ضبط OMDA_RELEASE_VERSION لعرض الإصدار، وإلا يستخدم العامل معرّف كومت Railway عند توفره.
 شغّل العامل أو أعد نشره. يرسل أول تقرير بعد أول دورة عمليات ثم كل عشر دقائق. في الإنتاج استخدم HTTPS. يظهر الملخص ووقت استلامه في تفاصيل الفندق.
 يجب تطبيق ترحيل اللوحة 0002 قبل الربط. إصدار رمز بديل يلغي السابق.
+
+## التشغيل على Railway
+
+حدّد Start Command بالقيمة التالية، وأعد النشر بعد رفع ملفات المشروع إلى المستودع المرتبط.
+
+```sh
+python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+اضبط متغيرات الإنتاج المذكورة أعلاه. أضف دومين خدمة Railway إلى DJANGO_ALLOWED_HOSTS دون https://.

@@ -132,3 +132,8 @@ if os.getenv('DATABASE_URL'):
         USER=unquote(db.username or ''), PASSWORD=unquote(db.password or ''), HOST=db.hostname, PORT=db.port)
 elif not DEBUG:
     raise RuntimeError('Set DATABASE_URL')
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
