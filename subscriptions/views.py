@@ -37,6 +37,9 @@ def detail(request, pk):
         if not request.user.is_superuser:
             raise PermissionDenied
         selected = get_object_or_404(hotel.installations, pk=int(value) if (value := request.POST.get('installation', '')).isascii() and value.isdecimal() and len(value) <= 18 else 0)
+        if request.POST.get("action") == "sync":
+            hotel.installations.filter(pk=selected.pk).update(sync_requested_at=timezone.now())
+            return redirect("hotel-detail", pk=hotel.pk)
         token = secrets.token_urlsafe(32)
         hotel.installations.filter(pk=selected.pk).update(sync_token_hash=hashlib.sha256(token.encode()).hexdigest())
     response = render(request, 'subscriptions/detail.html', {'hotel': hotel, 'token': token})
@@ -77,3 +80,4 @@ def editor(request, kind, pk=None):
         hotel = record if kind == 'hotel' else record.hotel if kind == 'installation' else record.installation.hotel
         return redirect('hotel-detail', pk=hotel.pk)
     return render(request,'subscriptions/editor.html',{'form':form,'title':f'{"تعديل" if pk else "إضافة"} {label}'})
+

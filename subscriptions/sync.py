@@ -6,13 +6,13 @@ from uuid import UUID
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
 
 from .models import Installation
 
 
 @csrf_exempt
-@require_POST
+@require_http_methods(["GET", "POST"])
 def report(request, identifier):
     authorization = request.headers.get('Authorization', '')
     if not authorization.startswith('Bearer '):
@@ -25,6 +25,8 @@ def report(request, identifier):
     digest = hashlib.sha256(token.encode()).hexdigest()
     if not installation or not installation.sync_token_hash or not secrets.compare_digest(digest, installation.sync_token_hash):
         return JsonResponse({'error': 'Unauthorized'}, status=401)
+    if request.method == "GET":
+        return JsonResponse({"requested": installation.sync_requested_at is not None}, headers={"Cache-Control": "no-store"})
     try:
         if len(request.body) > 4096:
             raise ValueError
@@ -44,6 +46,7 @@ def report(request, identifier):
     except (ValueError, TypeError, AttributeError):
         return JsonResponse({'error': 'Invalid report'}, status=400)
     updated = Installation.objects.filter(pk=installation.pk, sync_token_hash=digest).update(
-        active_branches=data['active_branches'], sync_snapshot=data, last_sync_at=timezone.now())
+        active_branches=data['active_branches'], sync_snapshot=data, last_sync_at=timezone.now(), sync_requested_at=None)
     return JsonResponse({'accepted': bool(updated)}, status=200 if updated else 401)
+
 

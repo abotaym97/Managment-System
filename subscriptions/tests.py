@@ -20,3 +20,11 @@ class SyncTests(TestCase):
         self.assertEqual(setup.active_branches, 2)
         self.assertEqual(setup.sync_snapshot, payload)
         self.assertIsNotNone(setup.last_sync_at)
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_superuser(username='sync-admin'))
+        self.assertEqual(self.client.post(f'/hotels/{hotel.pk}/', {'action':'sync','installation':setup.pk}).status_code, 302)
+        auth = {'HTTP_AUTHORIZATION': 'Bearer fixture-token'}
+        self.assertEqual(self.client.get(path, **auth).json(), {'requested': True})
+        self.assertEqual(self.client.post(path, payload, content_type='application/json', **auth).status_code, 200)
+        self.assertEqual(self.client.get(path, **auth).json(), {'requested': False})
+

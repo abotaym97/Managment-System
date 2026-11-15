@@ -13,6 +13,7 @@ class Installation(models.Model):
     identifier = models.UUIDField(unique=True)
     sync_token_hash = models.CharField(max_length=64, blank=True, editable=False)
     sync_snapshot = models.JSONField(default=dict, blank=True, editable=False)
+    sync_requested_at = models.DateTimeField(null=True, editable=False)
     last_sync_at = models.DateTimeField(null=True, editable=False)
     active_branches = models.PositiveIntegerField(null=True, blank=True)
     website = models.URLField(blank=True)
@@ -37,5 +38,6 @@ class License(models.Model):
             raise ValidationError({'branch_limit': 'حد الفروع يجب أن يكون واحدًا على الأقل.'})
     def __str__(self):
         return str(self.serial)
+
 
 
