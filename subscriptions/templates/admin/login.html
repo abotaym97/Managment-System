@@ -1,8 +1,8 @@
 {% extends 'subscriptions/base.html' %}{% block body_class %}auth-page{% endblock %}{% block body %}
 <section class="auth-panel">
-<h1>{% if ar %}تسجيل الدخول{% else %}Sign in{% endif %}</h1>
+<div class="login-brand" translate="no">OMDA</div><h1>{% if ar %}تسجيل الدخول{% else %}Sign in{% endif %}</h1>
 <p>{% if ar %}ادخل بحساب إدارة اشتراكات OMDA.{% else %}Use your OMDA subscription administrator account.{% endif %}</p>
-<form method="post" action="{{ app_path }}">{% csrf_token %}{{ form.non_field_errors }}
-{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}
-<input type="hidden" name="next" value="{{ next }}"><button type="submit">{% if ar %}دخول{% else %}Sign in{% endif %}</button>
+<form method="post" action="{{ app_path|default:request.path }}" data-sign-in>{% csrf_token %}{{ form.non_field_errors }}
+{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{% if field.name == "password" %}<button class="password-toggle" type="button" data-password-toggle aria-controls="{{ field.id_for_label }}" aria-pressed="false" data-show="{% if ar %}إظهار كلمة المرور{% else %}Show Password{% endif %}" data-hide="{% if ar %}إخفاء كلمة المرور{% else %}Hide Password{% endif %}" hidden>{% if ar %}إظهار كلمة المرور{% else %}Show Password{% endif %}</button>{% endif %}{{ field.errors }}</div>{% endfor %}
+<input type="hidden" name="next" value="{{ next }}"><button type="submit" data-busy="{% if ar %}جارٍ تسجيل الدخول…{% else %}Signing in…{% endif %}">{% if ar %}دخول{% else %}Sign in{% endif %}</button>
 </form></section>{% endblock %}

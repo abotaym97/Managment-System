@@ -7,8 +7,8 @@ from django.utils import timezone
 from .models import Hotel, License
 
 
-@staff_member_required
-def dashboard(request):
+@staff_member_required(login_url="login")
+def dashboard(request, directory=False):
     from django.db.models import Q
     today = timezone.localdate()
     query = request.GET.get('q', '').strip()[:200]
@@ -40,11 +40,11 @@ def dashboard(request):
             rows.append({'hotel':hotel,'license':license,'state':state})
     return render(request, 'subscriptions/dashboard.html', {'rows':rows, 'query':query, 'status':status,
         'notices':sorted(notices,key=lambda item:item.ends_on), 'total':len(hotels), 'totals':totals,
-        'statuses':('active','warning','grace','expired','none')})
+        'directory':directory, 'statuses':('active','warning','grace','expired','none')})
 
 
 
-@staff_member_required
+@staff_member_required(login_url="login")
 def detail(request, pk):
     hotel = get_object_or_404(Hotel.objects.prefetch_related('installations__licenses'), pk=pk)
     token = None
@@ -78,7 +78,7 @@ EDITOR = {
 }
 LABELS = dict(name='اسم الفندق',contact='مسؤول التواصل',email='البريد الإلكتروني',hotel='الفندق',identifier='معرّف النظام',active_branches='الفروع النشطة',website='رابط النظام',deployment_branch='برانش النشر',installation='بيئة التشغيل',serial='الرقم التسلسلي',plan='الباقة',starts_on='تاريخ البداية',ends_on='تاريخ الانتهاء',branch_limit='حد الفروع',warning_days='أيام التنبيه',grace_days='أيام السماحية',activated='مفعّل')
 
-@staff_member_required
+@staff_member_required(login_url="login")
 def editor(request, kind, pk=None):
     from django.forms import DateInput
     from django.core.exceptions import PermissionDenied
@@ -105,3 +105,13 @@ def editor(request, kind, pk=None):
     title = f'{"تعديل" if pk else "إضافة"} {label}' if arabic else f'{"Edit" if pk else "Add"} {entity}'
     return render(request,'subscriptions/editor.html',{'form':form,'title':title})
 
+
+
+@staff_member_required(login_url="login")
+def license_register(request):
+    from django.core.paginator import Paginator
+    from django.core.exceptions import PermissionDenied
+    if not request.user.has_perm('subscriptions.view_license'):
+        raise PermissionDenied
+    records = License.objects.select_related('installation__hotel').order_by('-ends_on', '-pk')
+    return render(request, 'subscriptions/licenses.html', {'page': Paginator(records, 30).get_page(request.GET.get('page'))})

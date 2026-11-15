@@ -28,3 +28,20 @@ class SyncTests(TestCase):
         self.assertEqual(self.client.post(path, payload, content_type='application/json', **auth).status_code, 200)
         self.assertEqual(self.client.get(path, **auth).json(), {'requested': False})
 
+
+class WorkspaceAuthenticationTests(TestCase):
+    def test_access_and_logout_require_the_existing_permissions_and_csrf(self):
+        from django.contrib.auth import get_user_model
+        from django.test import Client
+        staff = get_user_model().objects.create_user('workspace-staff', is_staff=True)
+        client = Client(enforce_csrf_checks=True)
+        self.assertRedirects(client.get('/hotels/'), '/login/?next=/hotels/')
+        client.force_login(staff)
+        self.assertEqual(client.get('/licenses/').status_code, 403)
+        self.assertEqual(client.get('/manage/hotel/new/').status_code, 403)
+        self.assertEqual(client.get('/logout/').status_code, 405)
+        self.assertEqual(client.post('/logout/').status_code, 403)
+        self.assertEqual(client.get('/').status_code, 200)
+        token = client.cookies['csrftoken'].value
+        self.assertRedirects(client.post('/logout/', {'csrfmiddlewaretoken': token}), '/login/')
+        self.assertRedirects(client.get('/'), '/login/?next=/')

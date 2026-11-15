@@ -1,11 +1,18 @@
 from django.contrib import admin
 from django.urls import path
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.admin.forms import AdminAuthenticationForm
 from subscriptions import views, sync
 
 urlpatterns = [
     path('manage/<str:kind>/new/', views.editor, name='record-add'),
     path('manage/<str:kind>/<int:pk>/', views.editor, name='record-edit'),
-    path('', views.dashboard),
+    path('', views.dashboard, name='dashboard'),
+    path('hotels/', views.dashboard, {'directory': True}, name='hotels'),
+    path('licenses/', views.license_register, name='licenses'),
+    path('login/', LoginView.as_view(template_name='admin/login.html', authentication_form=AdminAuthenticationForm,
+                                     redirect_authenticated_user=True, next_page='/'), name='login'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('hotels/<int:pk>/', views.detail, name='hotel-detail'),
     path('api/installations/<uuid:identifier>/report/', sync.report),
     path('admin/', admin.site.urls),

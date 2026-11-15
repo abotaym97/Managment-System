@@ -1,15 +1,18 @@
 {% load static %}<!doctype html>
 <html lang="{{ interface_language }}" dir="{% if ar %}rtl{% else %}ltr{% endif %}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% if ar %}اشتراكات OMDA{% else %}OMDA Subscriptions{% endif %}</title>
-<link rel="stylesheet" href="{% static 'subscriptions/style.css' %}"></head>
+<meta name="theme-color" content="#f2f3f5"><title>{% if ar %}اشتراكات OMDA{% else %}OMDA Subscriptions{% endif %}</title>
+<link rel="stylesheet" href="{% static 'subscriptions/style.css' %}">{% block scripts %}<script src="{% static 'subscriptions/interface.js' %}" defer></script>{% endblock %}</head>
 <body class="{% block body_class %}{% endblock %}"><a class="skip" href="#main">{% if ar %}إلى المحتوى{% else %}Skip to content{% endif %}</a>
 <div class="shell"><aside class="sidebar">
 <a class="brand" href="/"><span class="mark">O</span><span>OMDA<small>{% if ar %}إدارة الاشتراكات{% else %}Subscription management{% endif %}</small></span></a>
 <nav aria-label="{% if ar %}التنقل الرئيسي{% else %}Main navigation{% endif %}">
-<a href="/"{% if request.path == '/' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM12 4v16M4 12h16"/></svg>{% if ar %}الفنادق{% else %}Hotels{% endif %}</a>
-<a href="/admin/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8m-8 5h5"/></svg>{% if ar %}إدارة النظام{% else %}System admin{% endif %}</a>
+<a href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM12 4v16M4 12h16"/></svg>{% if ar %}لوحة التحكم{% else %}Dashboard{% endif %}</a>
+<a href="{% url 'hotels' %}"{% if '/hotels/' in request.path or '/manage/' in request.path %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V7h5V3h11v18M2 21h20M12 7h4m-4 4h4m-4 4h4"/></svg>{% if ar %}الفنادق{% else %}Hotels{% endif %}</a>
+{% if perms.subscriptions.view_license %}<a href="{% url 'licenses' %}"{% if request.path == '/licenses/' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6m-6 4h6"/></svg>{% if ar %}التراخيص{% else %}Licenses{% endif %}</a>{% endif %}
+{% if user.is_superuser or perms.subscriptions or perms.auth %}<a href="/admin/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8m-8 5h5"/></svg>{% if ar %}إدارة النظام{% else %}System Administration{% endif %}</a>{% endif %}
 </nav></aside><div class="workspace">
 <header class="topbar"><span>{% if ar %}لوحة الاشتراكات{% else %}Subscription workspace{% endif %}</span>
-<form method="get" class="language">{% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}<button name="lang" value="{% if ar %}en{% else %}ar{% endif %}" lang="{% if ar %}en{% else %}ar{% endif %}">{% if ar %}English{% else %}العربية{% endif %}</button></form></header>
+<form method="get" class="language">{% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}<button name="lang" value="{% if ar %}en{% else %}ar{% endif %}" lang="{% if ar %}en{% else %}ar{% endif %}">{% if ar %}English{% else %}العربية{% endif %}</button></form>
+{% if user.is_authenticated %}<details class="profile"><summary><span class="avatar" aria-hidden="true">{{ user.get_username|first|upper }}</span><bdi translate="no">{{ user.get_username }}</bdi></summary><div class="profile-menu"><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>{% if ar %}تسجيل الخروج{% else %}Sign Out{% endif %}</button></form></div></details>{% endif %}</header>
 <main id="main">{% block body %}{% endblock %}</main></div></div></body></html>
