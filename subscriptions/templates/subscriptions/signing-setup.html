@@ -1,0 +1,49 @@
+{% extends 'subscriptions/base.html' %}
+{% block body %}
+<div class="page-heading"><h1>{% if installation %}{% if ar %}إعداد ترخيص الفندق{% else %}Hotel License Setup{% endif %}{% else %}{% if ar %}إعداد التوقيع{% else %}Signing Setup{% endif %}{% endif %}</h1></div>
+<section class="signing-setup" data-signing-setup{% if saved %} data-settings-saved{% endif %}>
+  {% if installation %}<h2>{{ installation.hotel.name }}</h2>{% endif %}
+  {% if saved %}<p role="status">{% if ar %}تم حفظ مفتاح التوقيع.{% else %}Signing key saved.{% endif %}</p>{% endif %}
+  {% if error %}<p role="alert" class="errorlist">{{ error }}</p>{% endif %}
+  {% if public_key or installation %}
+    <h3>{% if ar %}متغيرات باكند الفندق{% else %}Hotel backend variables{% endif %}</h3>
+    <p>{% if ar %}انسخ كل قيمة إلى المتغير المطابق في باكند الفندق. كرر هذه الخطوة عند إعداد الفندق أول مرة.{% else %}Copy each value to its matching variable in the hotel backend during initial setup.{% endif %}</p>
+    {% if public_key %}
+      <div class="signing-value"><label for="signing-public">OMDA_LICENSE_PUBLIC_KEY</label>
+        <div><input id="signing-public" value="{{ public_key }}" readonly dir="ltr"><button type="button" data-copy-value="signing-public">{% if ar %}نسخ{% else %}Copy{% endif %}</button></div>
+      </div>
+    {% endif %}
+    {% if installation %}
+      <div class="signing-value"><label for="installation-id">OMDA_LICENSE_INSTALLATION</label>
+        <div><input id="installation-id" value="{{ installation.identifier }}" readonly dir="ltr"><button type="button" data-copy-value="installation-id">{% if ar %}نسخ{% else %}Copy{% endif %}</button></div>
+      </div>
+      <p>{% if assigned %}{% if ar %}يستخدم الفندق مفتاح توقيع خاصًا به.{% else %}This installation uses a dedicated signing key.{% endif %}{% elif public_key %}{% if ar %}يستخدم الفندق مفتاح التوقيع الافتراضي.{% else %}This installation uses the default signing key.{% endif %}{% endif %}</p>
+    {% endif %}
+    <p role="status" data-signing-copy-status></p>
+  {% endif %}
+  {% if not configured %}
+    <p>{% if ar %}فعّل التخزين الدائم وكلمة مرور تشفير المفاتيح على خادم الإدارة لإتاحة إنشاء المفاتيح واستيرادها.{% else %}Configure persistent signing storage and its encryption password on the management server to generate or import keys.{% endif %}</p>
+  {% endif %}
+  {% if can_assign %}
+    <h3>{% if ar %}تهيئة مفتاح التوقيع{% else %}Configure signing key{% endif %}</h3>
+    {% if installation %}
+      <p>{% if ar %}استورد المفتاح الحالي للفندق للحفاظ على توافق تراخيصه. عند إنشاء مفتاح مختلف، يجب تحديث المفتاح العام عند الفندق وإصدار ترخيص جديد.{% else %}Import the hotel’s existing key to keep its licenses compatible. A different key requires updating the hotel’s public key and issuing a new license.{% endif %}</p>
+    {% else %}
+      <p>{% if ar %}استورد مفتاح التوقيع الحالي للحفاظ على توافق الفنادق التي تستخدمه، أو أنشئ مفتاحًا جديدًا للإعداد الأولي.{% else %}Import your existing signing key to keep hotels that use it compatible, or generate a key for a new setup.{% endif %}</p>
+    {% endif %}
+    <form data-editor method="post" enctype="multipart/form-data" class="signing-form">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="fields">
+        <div class="field">{{ form.pem.as_field_group }}</div>
+        <div class="field">{{ form.password.as_field_group }}</div>
+      </div>
+      {% if form.confirm %}<div class="signing-confirm">{{ form.confirm.errors }}{{ form.confirm }} {{ form.confirm.label_tag }}</div>{% endif %}
+      <div class="actions">
+        <button type="submit" name="action" value="import">{% if ar %}استيراد المفتاح{% else %}Import Key{% endif %}</button>
+        <button type="submit" name="action" value="generate">{% if ar %}إنشاء مفتاح{% else %}Generate Key{% endif %}</button>
+      </div>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

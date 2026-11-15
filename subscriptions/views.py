@@ -105,6 +105,9 @@ def editor(request, kind, pk=None):
     labels = LABELS if arabic else {name: english_labels.get(name, name.replace('_', ' ').capitalize()) for name in fields}
     form_class = modelform_factory(model, fields=fields, labels=labels, widgets=widgets)
     initial = {name: request.GET[name] for name in ('hotel','installation') if name in fields and request.GET.get(name,'').isdigit()}
+    if kind == 'installation' and not pk and request.method == 'GET':
+        from uuid import uuid4
+        initial['identifier'] = uuid4()
     form = form_class(request.POST if request.method == 'POST' else None, instance=instance, initial=initial)
     if request.method == 'POST' and form.is_valid():
         record = form.save()

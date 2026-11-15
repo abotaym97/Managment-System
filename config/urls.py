@@ -4,6 +4,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.admin.forms import AdminAuthenticationForm
 from subscriptions import views, sync
 from subscriptions.issuer import issue_license
+from subscriptions.signing_views import signing_setup
 
 urlpatterns = [
     path('manage/<str:kind>/new/', views.editor, name='record-add'),
@@ -14,6 +15,8 @@ urlpatterns = [
     path('installations/', views.installation_register, name='installations'),
     path('licenses/<int:pk>/', views.license_detail, name='license-detail'),
     path('system/', views.system_administration, name='system'),
+    path('licenses/signing/', signing_setup, name='signing-setup'),
+    path('installations/<int:pk>/signing/', signing_setup, name='installation-signing'),
     path('licenses/issue/', issue_license, name='issue-license'),
     path('licenses/', views.license_register, name='licenses'),
     path('login/', LoginView.as_view(template_name='admin/login.html', authentication_form=AdminAuthenticationForm,

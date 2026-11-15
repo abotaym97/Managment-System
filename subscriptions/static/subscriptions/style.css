@@ -98,3 +98,13 @@ button,.button{border-radius:6px;padding:7px 12px}.state-warning,.state-grace{ba
 @media (max-width: 660px) { .issuer-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .issuer-installation-id output { display: block; overflow-wrap: anywhere; text-align: start; font-variant-numeric: tabular-nums; }
+
+.record-dialog .signing-setup { margin: 0; padding: 0; border: 0; box-shadow: none; }
+.signing-form { display: block; }
+.signing-form .field { min-inline-size: 0; }
+.signing-form .actions { justify-content: flex-start; margin-block: 1rem; }
+.signing-confirm, .signing-value { margin-block: .75rem; }
+.signing-value label { display: block; direction: ltr; text-align: start; overflow-wrap: anywhere; font-weight: 600; }
+.signing-value > div { display: flex; gap: .5rem; }
+.signing-value input { flex: 1; min-inline-size: 0; }
+.signing-value button { flex: none; }

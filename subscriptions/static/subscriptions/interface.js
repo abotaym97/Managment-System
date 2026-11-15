@@ -80,18 +80,20 @@ if (tokenDialog?.showModal) {
   });
 }
 document.addEventListener('click', async event => {
-  const button = event.target.closest('[data-copy-token]');
+  const button = event.target.closest('[data-copy-token], [data-copy-value]');
   if (!button) return;
-  const scope = button.closest('[data-issue-result]') || document;
-  const input = scope.querySelector('#new-token');
-  const status = scope.querySelector('[data-copy-status]');
+  const valueId = button.dataset.copyValue;
+  const input = document.getElementById(valueId || 'new-token');
+  const status = valueId
+    ? button.closest('[data-signing-setup]').querySelector('[data-signing-copy-status]')
+    : (button.closest('[data-issue-result]') || document).querySelector('[data-copy-status]');
   try {
     await navigator.clipboard.writeText(input.value);
-    status.textContent = button.dataset.copied;
+    status.textContent = button.dataset.copied || modalText('Copied', 'تم النسخ');
   } catch {
     input.focus();
     input.select();
-    status.textContent = button.dataset.copyFailed;
+    status.textContent = button.dataset.copyFailed || modalText('Select and copy the value manually.', 'حدد القيمة وانسخها يدويًا.');
   }
 });
 
@@ -180,15 +182,16 @@ async function loadEditor(options = {}) {
     if (!response.ok) throw Error('Form unavailable');
     const page = new DOMParser().parseFromString(await response.text(), 'text/html');
     const result = page.querySelector('[data-issue-result]');
+    const setup = page.querySelector('[data-signing-setup]');
     const form = page.querySelector('[data-editor]');
     const title = page.querySelector('main h1');
-    if ((!form && !result) || !title) throw Error('Missing editor');
+    if ((!form && !result && !setup) || !title) throw Error('Missing editor');
     form?.querySelector('.actions a')?.remove();
     editorDialog.querySelector('#record-modal-heading').textContent = title.textContent;
-    editorDialog.querySelector('[data-modal-content]').replaceChildren(result || form);
+    editorDialog.querySelector('[data-modal-content]').replaceChildren(setup || result || form);
     editorDialog.querySelector('[data-full-editor]').hidden = Boolean(result);
     prepareIssuer(form);
-    editorDirty = !result && options.method === 'POST';
+    editorDirty = !result && !setup?.hasAttribute('data-settings-saved') && options.method === 'POST';
     result?.querySelector('[data-copy-token]').focus();
     form?.querySelector('[aria-invalid="true"], input:not([type="hidden"]), select')?.focus();
     status.textContent = '';
@@ -197,8 +200,7 @@ async function loadEditor(options = {}) {
   } finally {
     editorBusy = false;
     editorDialog.removeAttribute('aria-busy');
-    const save = editorDialog.querySelector('button[type="submit"]');
-    if (save) save.disabled = false;
+    for (const save of editorDialog.querySelectorAll('button[type="submit"]')) save.disabled = false;
   }
 }
 
@@ -221,15 +223,15 @@ if (editorDialog.showModal) {
     if (!event.target.matches('[data-editor]')) return;
     event.preventDefault();
     if (editorBusy) return;
-    const body = new FormData(event.target);
-    if (event.submitter) event.submitter.disabled = true;
+    const body = new FormData(event.target, event.submitter);
+    for (const button of event.target.querySelectorAll('button[type="submit"]')) button.disabled = true;
     void loadEditor({method:'POST', body});
   });
   document.addEventListener('click', event => {
     const link = event.target.closest('a[href]');
     if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const url = new URL(link.href);
-    if (url.origin !== location.origin || !/^\/(?:licenses\/issue|manage\/(?:hotel|installation|license)\/(?:new|\d+))\/$/.test(url.pathname)) return;
+    if (url.origin !== location.origin || !/^\/(?:licenses\/(?:issue|signing)|installations\/\d+\/signing|manage\/(?:hotel|installation|license)\/(?:new|\d+))\/$/.test(url.pathname)) return;
     if (link.matches('[data-full-editor]') || editorDialog.open) return;
     event.preventDefault();
     editorSource = link.closest('[data-installation-menu]')?.querySelector('summary') || link;

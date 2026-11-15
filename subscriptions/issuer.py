@@ -1,12 +1,9 @@
 import base64
 import json
-import os
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone as utc
 from uuid import uuid4
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from django import forms
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
@@ -19,6 +16,7 @@ from django.views.decorators.http import require_http_methods
 from cryptography.exceptions import UnsupportedAlgorithm
 
 from .models import Installation, License
+from .signing_keys import get_signing_key, legacy_configured, storage_configured
 
 
 PLANS = {'trial': ('Trial', 'تجريبي'), 'monthly': ('Monthly', 'شهري'),
@@ -84,14 +82,10 @@ def encode(value):
 
 
 def issue(data, serial):
-    pem = os.environ['OMDA_ISSUER_PRIVATE_KEY'].replace(chr(92) + 'n', chr(10)).encode()
-    password = os.environ['OMDA_ISSUER_KEY_PASSWORD'].encode()
-    if not password:
-        raise ValueError('Signing password is required.')
-    key = serialization.load_pem_private_key(pem, password)
-    if not isinstance(key, Ed25519PrivateKey):
-        raise ValueError('Expected an Ed25519 key.')
     item = data['installation']
+    key = get_signing_key(item)
+    if key is None:
+        raise ValueError('No configured signing key')
     plan = PLANS[data['plan']][0]
     fields = {name:data[name] for name in ('branch_limit', 'warning_days', 'grace_days', 'starts_on', 'ends_on')}
     payload = json.dumps({'version':2, 'serial':str(serial), 'installation':str(item.identifier),
@@ -110,7 +104,7 @@ def issue_license(request):
     if not request.user.is_superuser or not request.user.has_perm('subscriptions.add_license'):
         raise PermissionDenied
     arabic = request.LANGUAGE_CODE == 'ar'
-    configured = bool(os.getenv('OMDA_ISSUER_PRIVATE_KEY') and os.getenv('OMDA_ISSUER_KEY_PASSWORD'))
+    configured = storage_configured() or legacy_configured()
     form = IssueForm(request.POST if request.method == 'POST' else None, arabic=arabic,
                      initial={'plan':'monthly','starts_on':timezone.localdate(),
                               'installation':request.GET.get('installation')})
@@ -132,7 +126,7 @@ def issue_license(request):
                 if not License.objects.filter(serial=serial).exists():
                     raise
                 form.add_error(None, 'صدر هذا المفتاح سابقًا. افتح نموذجًا جديدًا لإصدار مفتاح آخر.' if arabic else 'This key was already issued. Open a new form to issue another key.')
-            except (KeyError, ValueError, TypeError, UnsupportedAlgorithm):
+            except (KeyError, ValueError, TypeError, OSError, UnsupportedAlgorithm):
                 form.add_error(None, 'تحقق من إعدادات مفتاح التوقيع بالخادم.' if arabic else 'Check the signing key settings on the server.')
     return render(request, 'subscriptions/issue-license.html', {
         'form': form, 'issued_token': token, 'submission': submission,

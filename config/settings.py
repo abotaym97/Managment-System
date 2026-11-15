@@ -144,3 +144,7 @@ MIDDLEWARE.insert(MIDDLEWARE.index('django.contrib.sessions.middleware.SessionMi
 
 # Resolve OMDA's admin presentation overrides before Django's bundled templates.
 TEMPLATES[0]['DIRS'].insert(0, BASE_DIR / 'subscriptions' / 'templates')
+
+# Mount a persistent private volume here and provision its encryption password independently.
+OMDA_SIGNING_KEY_DIR = os.getenv('OMDA_SIGNING_KEY_DIR', '')
+OMDA_SIGNING_STORAGE_PASSWORD = os.getenv('OMDA_SIGNING_STORAGE_PASSWORD', '')

@@ -26,6 +26,7 @@
 <a href="{% url 'hotel-detail' item.hotel_id %}#installation-{{ item.pk }}">{% if ar %}عرض التفاصيل{% else %}View Details{% endif %}</a>
 {% if perms.subscriptions.change_installation %}<a href="{% url 'record-edit' 'installation' item.pk %}">{% if ar %}تعديل البيئة{% else %}Edit Installation{% endif %}</a>{% endif %}
 {% if user.is_superuser and perms.subscriptions.change_installation %}<a href="{% url 'installation-token' item.pk %}">{% if item.sync_token_hash %}{% if ar %}استبدال الرمز{% else %}Replace Token{% endif %}{% else %}{% if ar %}إصدار رمز{% else %}Generate Token{% endif %}{% endif %}</a>{% endif %}
+{% if user.is_superuser %}<a href="{% url 'installation-signing' item.pk %}">{% if ar %}إعداد ترخيص الفندق{% else %}License Setup{% endif %}</a>{% endif %}
 {% if perms.subscriptions.delete_installation %}<a class="installation-delete" href="{% url 'admin:subscriptions_installation_delete' item.pk %}">{% if ar %}حذف البيئة{% else %}Delete Installation{% endif %}</a>{% endif %}
 </div></details>
 {% elif perms.subscriptions.add_installation %}<a class="button" href="{% url 'record-add' 'installation' %}?hotel={{ row.hotel.pk }}">{% if ar %}إضافة بيئة تشغيل{% else %}Add Installation{% endif %}</a>{% endif %}

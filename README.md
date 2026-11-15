@@ -31,21 +31,31 @@ python manage.py migrate --noinput && python manage.py collectstatic --noinput &
 
 اضبط متغيرات الإنتاج المذكورة أعلاه. أضف دومين خدمة Railway إلى DJANGO_ALLOWED_HOSTS دون https://.
 
-## Issue license keys from the web
+## Set up and issue licenses from the web
 
-Set the sealed variables on the management service, using the encrypted Ed25519
-PEM from the existing Windows issuer and its password:
+For web-managed signing keys, mount a private persistent volume on the management
+service. Set OMDA_SIGNING_KEY_DIR to the mount path and set
+OMDA_SIGNING_STORAGE_PASSWORD to a strong random secret in the management service
+variables. Back up the volume and preserve its password separately. Keep the path
+and password stable across deployments. Use the same storage on every process that
+issues licenses.
 
-- OMDA_ISSUER_PRIVATE_KEY: contents of the encrypted PEM (actual line breaks or escaped newlines)
-- OMDA_ISSUER_KEY_PASSWORD: password that decrypts the PEM
+Sign in as a superuser. Under **Licenses → Signing Setup**, generate a default
+signing key or import the existing encrypted Ed25519 PEM and its password. Keys
+are encrypted at rest and the page exposes only the public key. A legacy key
+configured with OMDA_ISSUER_PRIVATE_KEY and OMDA_ISSUER_KEY_PASSWORD continues to
+serve as the default when a stored default is absent.
 
-Keep both values in server-side secrets. The hotel backend continues to use only
-the corresponding OMDA_LICENSE_PUBLIC_KEY. Use the existing private key to keep
-that public key compatible. Grant superuser access only to trusted operators.
+Create the hotel, then create its installation. A unique ID is prefilled for a
+new setup. For an existing hotel, use its current OMDA_LICENSE_INSTALLATION.
+Under **Installations → Actions → License Setup**, copy OMDA_LICENSE_PUBLIC_KEY
+and OMDA_LICENSE_INSTALLATION into that hotel's backend variables. If the hotel
+already uses a different signing key, import its existing encrypted PEM in
+this dialog before issuing keys to it. A dedicated key takes precedence over
+the default. Only create a different key for an existing installation when the
+hotel is ready to switch its public key and activate a newly issued license.
 
-Under **Licenses → Issue License Key**, select the registered installation and
-choose the plan, start date, branch limit, warning days and grace days. Trial
-uses months, Monthly and Annual have fixed durations, and Custom accepts months
-or years. The end date is inclusive. Copy the signed key and paste it into the
-hotel system's License settings for activation. The management system keeps the
-license record and displays the key only in the successful issuance response.
+Under **Licenses → Issue License Key**, select the hotel installation, choose a
+plan, and confirm the dates and branch limit. Copy the issued key into the hotel
+system's License settings. For renewal, issue and activate a new license using
+the same installation and signing key.
