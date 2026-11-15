@@ -1,1 +1,7 @@
-{% extends 'subscriptions/base.html' %}{% block body %}<a class="back" href="/">← الفنادق المشتركة</a><h1>{{ title }}</h1><section class="editor"><form method="post">{% csrf_token %}{{ form.non_field_errors }}<div class="fields">{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}</div><div class="actions"><button type="submit">حفظ السجل</button><a href="/">إلغاء</a></div></form></section>{% endblock %}
+{% extends 'subscriptions/base.html' %}{% block body %}
+<a class="back" href="/">{% if ar %}الفنادق المشتركة{% else %}Hotels{% endif %}</a>
+<div class="page-heading"><h1>{{ title }}</h1></div>
+<section class="editor"><form method="post">{% csrf_token %}{{ form.non_field_errors }}
+<div class="fields">{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}</div>
+<div class="actions"><button type="submit">{% if ar %}حفظ السجل{% else %}Save record{% endif %}</button><a href="/">{% if ar %}إلغاء{% else %}Cancel{% endif %}</a></div>
+</form></section>{% endblock %}

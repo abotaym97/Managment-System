@@ -90,12 +90,18 @@ def editor(request, kind, pk=None):
         raise PermissionDenied
     instance = get_object_or_404(model, pk=pk) if pk else None
     widgets = {name: DateInput(attrs={'type':'date'}, format='%Y-%m-%d') for name in fields if name in ('starts_on','ends_on')}
-    form_class = modelform_factory(model, fields=fields, labels=LABELS, widgets=widgets)
+    arabic = request.LANGUAGE_CODE == 'ar'
+    english_labels = dict(contact='Contact person', identifier='Installation ID', website='Website',
+                          serial='License serial number', activated='Activated')
+    labels = LABELS if arabic else {name: english_labels.get(name, name.replace('_', ' ').capitalize()) for name in fields}
+    form_class = modelform_factory(model, fields=fields, labels=labels, widgets=widgets)
     initial = {name: request.GET[name] for name in ('hotel','installation') if name in fields and request.GET.get(name,'').isdigit()}
     form = form_class(request.POST if request.method == 'POST' else None, instance=instance, initial=initial)
     if request.method == 'POST' and form.is_valid():
         record = form.save()
         hotel = record if kind == 'hotel' else record.hotel if kind == 'installation' else record.installation.hotel
         return redirect('hotel-detail', pk=hotel.pk)
-    return render(request,'subscriptions/editor.html',{'form':form,'title':f'{"تعديل" if pk else "إضافة"} {label}'})
+    entity = {'hotel':'hotel','installation':'installation','license':'license'}[kind]
+    title = f'{"تعديل" if pk else "إضافة"} {label}' if arabic else f'{"Edit" if pk else "Add"} {entity}'
+    return render(request,'subscriptions/editor.html',{'form':form,'title':title})
 

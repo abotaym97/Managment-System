@@ -29,3 +29,38 @@ main{max-width:1440px;padding:32px}
 .skip{position:absolute;inset-inline-start:8px;top:-80px;z-index:1;background:white;padding:8px}.skip:focus{top:8px}
 @media(max-width:900px){.shell{grid-template-columns:172px minmax(0,1fr)}main{padding:24px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.shell{display:block}.sidebar{padding:8px 12px}.sidebar nav{display:flex;margin:0;flex-wrap:wrap}.brand small{display:block}.topbar{padding:8px 16px}main{padding:16px}.metrics{gap:8px}.metrics>div{padding:12px}.directory-head{padding:12px}.filters label{flex:1 1 100%}}
+.auth-page .shell{display:block}.auth-page .sidebar{display:none}.auth-page main{max-width:520px;margin:8vh auto}.auth-panel{padding:32px;border-block-start:4px solid var(--blue)}.auth-panel h1{font-size:30px}.auth-panel p{color:var(--muted);margin:0 0 24px}.auth-panel form{display:grid;gap:16px}.auth-panel button{justify-content:center;width:100%}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 16px;margin-block:16px}.facts>div{padding:12px;background:#f3f6fa;border-radius:8px;min-width:0}.facts dt{color:var(--muted);font-size:13px}.facts dd{margin:4px 0 0}.facts+form{padding-block:12px;margin-bottom:16px;border-block:1px solid var(--line)}button:disabled{background:#e3e8ef;color:#52647a;cursor:default}code{overflow-wrap:anywhere}
+@media(max-width:900px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.facts{grid-template-columns:1fr}.auth-panel{padding:20px}}
+:root{--ink:#151c28;--muted:#5f6876;--paper:#fff;--canvas:#f2f3f5;--line:#e1e4eb;--blue:#1f3fab;--nav:#f2f3f5;--radius:9px;--shadow:none}
+body{font-size:14px;font-family:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif}
+.shell{grid-template-columns:224px minmax(0,1fr)}
+.sidebar{padding:20px 12px 20px 0;color:var(--ink)}
+[dir=rtl] .sidebar{padding:20px 0 20px 12px}
+.sidebar a{color:#404854}
+.sidebar nav{margin-top:18px;gap:4px}
+.sidebar nav a{min-height:44px;padding:9px 16px;border-radius:0 26px 26px 0}
+[dir=rtl] .sidebar nav a{border-radius:26px 0 0 26px}
+.sidebar nav a[aria-current],.sidebar nav a:hover{background:white;color:var(--blue);font-weight:650}
+.brand{padding-inline:16px;color:var(--ink)!important}.brand small{color:var(--muted)}
+.mark{background:#e4eaff;color:var(--blue);width:32px;height:32px}
+.topbar{background:var(--canvas);padding-inline:28px}
+main{padding:24px 28px;max-width:1440px}
+.reference-toolbar{padding-bottom:16px;margin-bottom:0;border-bottom:1px solid var(--line)}
+.reference-toolbar h1{font-size:24px}.reference-toolbar p{font-size:13px}
+.metrics{padding-block:20px;gap:16px}
+.metrics>div{padding:0;border:0;background:transparent;box-shadow:none;border-radius:0}
+.metrics span{font-size:13px}.metrics strong{font-size:28px;line-height:1.2;margin-top:4px}
+.metrics>div:nth-child(1) strong{color:#1f3fab}.metrics>div:nth-child(2) strong{color:#12605f}.metrics>div:nth-child(3) strong{color:#875409}.metrics>div:nth-child(4) strong{color:#a5283d}
+.overview-grid{display:grid;grid-template-columns:minmax(0,2.15fr) minmax(230px,1fr);gap:24px;align-items:start}
+.overview-grid>section{margin:0;border:0;border-radius:var(--radius)}
+.directory-head,.renewals{padding:18px 20px}.directory h2,.renewals h2{font-size:17px}
+.directory thead{background:#f5f6f8}.directory th,.directory td{padding:10px 13px}
+.renewals li{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.renewals li:last-child{border-bottom:0}.renewal-dot{border:2px solid #34a7ce;flex:0 0 12px;height:12px;border-radius:50%;margin-top:6px}.renewal-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--muted);margin-top:4px}.renewal-empty{color:var(--muted)}
+button,.button{border-radius:6px;padding:7px 12px}.state-warning,.state-grace{background:#fee5ad}.state-active{background:#d6f2ec}.state-expired{background:#fbdde1}
+.auth-panel{border-block-start:3px solid var(--blue)}
+@media(max-width:1100px){.overview-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:900px){.shell{grid-template-columns:160px minmax(0,1fr)}main{padding:20px}}
+@media(max-width:620px){.shell{display:block}.sidebar,[dir=rtl] .sidebar{padding:8px 12px}.sidebar nav{margin-top:4px}.sidebar nav a,[dir=rtl] .sidebar nav a{border-radius:20px}.topbar,main{padding-inline:16px}.metrics{gap:14px}.overview-grid{gap:16px}}

@@ -122,7 +122,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or ('omda-local-development-only' if
 if not SECRET_KEY:
     raise RuntimeError('Set DJANGO_SECRET_KEY')
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-LANGUAGE_CODE = 'ar'
+LANGUAGE_CODE = 'en'
 TIME_ZONE = 'Asia/Baghdad'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = not DEBUG
@@ -139,3 +139,8 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 TEMPLATES[0]['OPTIONS']['context_processors'].append('subscriptions.context.interface')
+
+MIDDLEWARE.insert(MIDDLEWARE.index('django.contrib.sessions.middleware.SessionMiddleware') + 1, 'subscriptions.context.InterfaceLanguage')
+
+# Resolve OMDA's admin presentation overrides before Django's bundled templates.
+TEMPLATES[0]['DIRS'].insert(0, BASE_DIR / 'subscriptions' / 'templates')

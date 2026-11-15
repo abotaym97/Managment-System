@@ -1,0 +1,5 @@
+{% extends 'admin/base.html' %}{% load static %}
+{% block title %}{{ title }} | OMDA{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'subscriptions/admin.css' %}">{% endblock %}
+{% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}">OMDA · {% if ar %}إدارة النظام{% else %}System administration{% endif %}</a></div>{% endblock %}
+{% block userlinks %}<a href="/">{% if ar %}الفنادق{% else %}Hotels{% endif %}</a> / <a href="?lang={% if ar %}en{% else %}ar{% endif %}">{% if ar %}English{% else %}العربية{% endif %}</a> / {{ block.super }}{% endblock %}
