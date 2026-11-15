@@ -1,0 +1,3 @@
+# OMDA subscriptions design
+
+Use a navy navigation rail, neutral workspace, and restrained blue actions. Place the renewal queue directly above the directory whenever a real subscription needs attention. Use the shared CSS variables in subscriptions/static/subscriptions/style.css as the runtime tokens. Use compact tables, visible focus, status text with restrained semantic colors, and 8px spacing increments. English is the default; Arabic flips the document direction. Shared components include navigation, language switch, action buttons, metric tiles, filters, tables, and status labels. The first rollout covers the shell and hotel directory. Detail, authentication, and installation and license editors are subsequent phases.

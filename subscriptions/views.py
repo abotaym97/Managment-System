@@ -9,21 +9,39 @@ from .models import Hotel, License
 
 @staff_member_required
 def dashboard(request):
-    query = request.GET.get('q', '').strip()[:200]
-    hotels = Hotel.objects.filter(name__icontains=query).order_by('name', 'pk')
+    from django.db.models import Q
     today = timezone.localdate()
-    notices = []
+    query = request.GET.get('q', '').strip()[:200]
+    status = request.GET.get('status', '')
+    hotels = list(Hotel.objects.order_by('name', 'pk'))
     licenses = License.objects.filter(activated=True, starts_on__lte=today).select_related(
         'installation__hotel').order_by('installation_id', '-starts_on', '-pk')
-    seen = set()
+    current = {}
     for license in licenses:
-        if license.installation_id in seen:
-            continue
-        seen.add(license.installation_id)
-        if today <= license.ends_on + timedelta(days=license.grace_days):
-            if license.ends_on <= today + timedelta(days=license.warning_days):
-                notices.append(license)
-    return render(request, 'subscriptions/dashboard.html', {'hotels': hotels, 'query': query, 'notices': notices})
+        current.setdefault(license.installation_id, license)
+    by_hotel = {}
+    notices = []
+    totals = dict(active=0, warning=0, grace=0, expired=0)
+    for license in current.values():
+        remaining = (license.ends_on - today).days
+        state = ('expired' if remaining < -license.grace_days else 'grace' if remaining < 0
+                 else 'warning' if remaining <= license.warning_days else 'active')
+        totals[state] += 1
+        by_hotel.setdefault(license.installation.hotel_id, []).append((license, state))
+        if state in ('warning', 'grace'):
+            notices.append(license)
+    matches = Hotel.objects.filter(Q(name__icontains=query) | Q(contact__icontains=query) | Q(email__icontains=query))
+    matching_ids = set(matches.values_list('pk', flat=True))
+    rows = []
+    for hotel in hotels:
+        items = by_hotel.get(hotel.pk, [])
+        license, state = min(items, key=lambda item: item[0].ends_on) if items else (None, 'none')
+        if hotel.pk in matching_ids and (not status or status == state):
+            rows.append({'hotel':hotel,'license':license,'state':state})
+    return render(request, 'subscriptions/dashboard.html', {'rows':rows, 'query':query, 'status':status,
+        'notices':sorted(notices,key=lambda item:item.ends_on), 'total':len(hotels), 'totals':totals,
+        'statuses':('active','warning','grace','expired','none')})
+
 
 
 @staff_member_required
