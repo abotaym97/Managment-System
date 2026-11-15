@@ -45,3 +45,20 @@ class WorkspaceAuthenticationTests(TestCase):
         token = client.cookies['csrftoken'].value
         self.assertRedirects(client.post('/logout/', {'csrfmiddlewaretoken': token}), '/login/')
         self.assertRedirects(client.get('/'), '/login/?next=/')
+
+    def test_dashboard_is_read_only_and_registers_enforce_permissions(self):
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import Permission
+        staff = get_user_model().objects.create_user('directory-staff', is_staff=True)
+        self.client.force_login(staff)
+        dashboard = self.client.get('/')
+        self.assertContains(dashboard, 'Subscription Distribution')
+        self.assertNotContains(dashboard, 'Hotel directory')
+        self.assertNotContains(dashboard, 'Add hotel')
+        self.assertContains(self.client.get('/hotels/'), 'Hotel directory')
+        for path in ('/licenses/', '/installations/', '/system/'):
+            self.assertEqual(self.client.get(path).status_code, 403)
+        staff.user_permissions.add(Permission.objects.get(codename='view_installation'))
+        self.assertContains(self.client.get('/installations/'), 'Installations')
+        self.assertEqual(self.client.get('/system/').status_code, 200)
+        self.assertEqual(self.client.get('/manage/installation/new/').status_code, 403)

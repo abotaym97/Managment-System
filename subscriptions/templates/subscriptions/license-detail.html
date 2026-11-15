@@ -1,0 +1,13 @@
+{% extends 'subscriptions/base.html' %}{% block body %}
+<a href="{% url 'licenses' %}">{% if ar %}التراخيص{% else %}Licenses{% endif %}</a>
+<div class="heading page-heading"><h1>{% if ar %}تفاصيل الترخيص{% else %}License Details{% endif %}</h1><div class="actions">{% if perms.subscriptions.change_license %}<a class="button" href="{% url 'record-edit' 'license' record.pk %}">{% if ar %}تعديل الترخيص{% else %}Edit License{% endif %}</a>{% endif %}{% if perms.subscriptions.delete_license %}<a href="{% url 'admin:subscriptions_license_delete' record.pk %}">{% if ar %}حذف{% else %}Delete{% endif %}</a>{% endif %}</div></div>
+<section><h2><bdi>{{ record.installation.hotel.name }} · {{ record.plan }}</bdi></h2><dl class="facts">
+<div><dt>{% if ar %}الرقم التسلسلي{% else %}Serial Number{% endif %}</dt><dd><bdi translate="no">{{ record.serial }}</bdi></dd></div>
+<div><dt>{% if ar %}بيئة التشغيل{% else %}Installation{% endif %}</dt><dd><a href="{% url 'hotel-detail' record.installation.hotel_id %}#installation-{{ record.installation.pk }}"><bdi translate="no">{{ record.installation.identifier }}</bdi></a></dd></div>
+<div><dt>{% if ar %}التفعيل{% else %}Activation{% endif %}</dt><dd>{% if ar %}{{ record.activated|yesno:"مفعّل,صادر" }}{% else %}{{ record.activated|yesno:"Activated,Issued" }}{% endif %}</dd></div>
+<div><dt>{% if ar %}البداية{% else %}Starts{% endif %}</dt><dd>{{ record.starts_on|date:"DATE_FORMAT" }}</dd></div>
+<div><dt>{% if ar %}الانتهاء{% else %}Expires{% endif %}</dt><dd>{{ record.ends_on|date:"DATE_FORMAT" }}</dd></div>
+<div><dt>{% if ar %}حد الفروع{% else %}Branch Limit{% endif %}</dt><dd>{{ record.branch_limit }}</dd></div>
+<div><dt>{% if ar %}أيام التنبيه{% else %}Warning Days{% endif %}</dt><dd>{{ record.warning_days }}</dd></div>
+<div><dt>{% if ar %}أيام السماحية{% else %}Grace Days{% endif %}</dt><dd>{{ record.grace_days }}</dd></div>
+</dl>{% if perms.subscriptions.add_license %}<a class="button" href="{% url 'record-add' 'license' %}?installation={{ record.installation_id }}">{% if ar %}تسجيل تجديد{% else %}Record Renewal{% endif %}</a>{% endif %}</section>{% endblock %}

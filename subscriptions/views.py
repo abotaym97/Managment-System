@@ -7,20 +7,14 @@ from django.utils import timezone
 from .models import Hotel, License
 
 
-@staff_member_required(login_url="login")
-def dashboard(request, directory=False):
-    from django.db.models import Q
+def subscription_overview():
     today = timezone.localdate()
-    query = request.GET.get('q', '').strip()[:200]
-    status = request.GET.get('status', '')
-    hotels = list(Hotel.objects.order_by('name', 'pk'))
     licenses = License.objects.filter(activated=True, starts_on__lte=today).select_related(
         'installation__hotel').order_by('installation_id', '-starts_on', '-pk')
     current = {}
     for license in licenses:
         current.setdefault(license.installation_id, license)
-    by_hotel = {}
-    notices = []
+    by_hotel, notices = {}, []
     totals = dict(active=0, warning=0, grace=0, expired=0)
     for license in current.values():
         remaining = (license.ends_on - today).days
@@ -30,6 +24,25 @@ def dashboard(request, directory=False):
         by_hotel.setdefault(license.installation.hotel_id, []).append((license, state))
         if state in ('warning', 'grace'):
             notices.append(license)
+    return by_hotel, sorted(notices, key=lambda item: item.ends_on), totals
+
+
+@staff_member_required(login_url="login")
+def dashboard(request):
+    _, notices, totals = subscription_overview()
+    return render(request, 'subscriptions/dashboard.html', {
+        'total': Hotel.objects.count(), 'totals': totals, 'notices': notices,
+        'distribution': totals.items(), 'distribution_max': max(totals.values()),
+    })
+
+
+@staff_member_required(login_url="login")
+def hotel_directory(request):
+    from django.db.models import Q
+    query = request.GET.get('q', '').strip()[:200]
+    status = request.GET.get('status', '')
+    hotels = list(Hotel.objects.order_by('name', 'pk'))
+    by_hotel, notices, totals = subscription_overview()
     matches = Hotel.objects.filter(Q(name__icontains=query) | Q(contact__icontains=query) | Q(email__icontains=query))
     matching_ids = set(matches.values_list('pk', flat=True))
     rows = []
@@ -38,9 +51,9 @@ def dashboard(request, directory=False):
         license, state = min(items, key=lambda item: item[0].ends_on) if items else (None, 'none')
         if hotel.pk in matching_ids and (not status or status == state):
             rows.append({'hotel':hotel,'license':license,'state':state})
-    return render(request, 'subscriptions/dashboard.html', {'rows':rows, 'query':query, 'status':status,
+    return render(request, 'subscriptions/hotels.html', {'rows':rows, 'query':query, 'status':status,
         'notices':sorted(notices,key=lambda item:item.ends_on), 'total':len(hotels), 'totals':totals,
-        'directory':directory, 'statuses':('active','warning','grace','expired','none')})
+        'statuses':('active','warning','grace','expired','none')})
 
 
 
@@ -109,9 +122,56 @@ def editor(request, kind, pk=None):
 
 @staff_member_required(login_url="login")
 def license_register(request):
+    from django.db.models import Q
+    records = License.objects.select_related('installation__hotel').order_by('-ends_on', '-pk')
+    return register(request, records, 'license', Q(serial__icontains=search_term(request)) |
+                    Q(plan__icontains=search_term(request)) | Q(installation__hotel__name__icontains=search_term(request)))
+
+
+def search_term(request):
+    return request.GET.get('q', '').strip()[:200]
+
+
+@staff_member_required(login_url="login")
+def installation_register(request):
+    from django.db.models import Q
+    records = Installation.objects.select_related('hotel').order_by('hotel__name', 'pk')
+    term = search_term(request)
+    return register(request, records, 'installation', Q(identifier__icontains=term) |
+                    Q(hotel__name__icontains=term) | Q(deployment_branch__icontains=term))
+
+
+def register(request, records, kind, search):
     from django.core.paginator import Paginator
+    from django.core.exceptions import PermissionDenied
+    if not request.user.has_perm(f'subscriptions.view_{kind}'):
+        raise PermissionDenied
+    status = request.GET.get('status', '')
+    term = search_term(request)
+    if term:
+        records = records.filter(search)
+    if kind == 'license' and status in ('issued', 'activated'):
+        records = records.filter(activated=status == 'activated')
+    query = request.GET.copy()
+    query.pop('page', None)
+    return render(request, f'subscriptions/{kind}s.html', {'page':Paginator(records,30).get_page(request.GET.get('page')),
+                  'query':term,'status':status,'page_query':query.urlencode()})
+
+
+@staff_member_required(login_url="login")
+def license_detail(request, pk):
     from django.core.exceptions import PermissionDenied
     if not request.user.has_perm('subscriptions.view_license'):
         raise PermissionDenied
-    records = License.objects.select_related('installation__hotel').order_by('-ends_on', '-pk')
-    return render(request, 'subscriptions/licenses.html', {'page': Paginator(records, 30).get_page(request.GET.get('page'))})
+    record = get_object_or_404(License.objects.select_related('installation__hotel'), pk=pk)
+    return render(request, 'subscriptions/license-detail.html', {'record':record})
+
+
+@staff_member_required(login_url="login")
+def system_administration(request):
+    from django.contrib import admin
+    from django.core.exceptions import PermissionDenied
+    apps = admin.site.get_app_list(request)
+    if not apps:
+        raise PermissionDenied
+    return render(request, 'subscriptions/system.html', {'apps':apps})
