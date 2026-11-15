@@ -1,0 +1,2 @@
+{% if item.sync_token_hash %}<span class="state state-active">{% if ar %}الرمز مضبوط{% else %}Token configured{% endif %}</span>{% else %}<span class="state">{% if ar %}الرمز غير مضبوط{% else %}No token configured{% endif %}</span>{% endif %}
+<small>{% if item.sync_requested_at %}{% if ar %}طلب المزامنة بالانتظار{% else %}Sync requested{% endif %}{% elif item.last_sync_at %}{% if ar %}تم استلام تقرير سابق{% else %}Report received{% endif %}{% else %}{% if ar %}لم يصل تقرير بعد{% else %}No report received{% endif %}{% endif %}</small>

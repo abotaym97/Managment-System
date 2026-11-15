@@ -69,3 +69,28 @@ if (profile) {
     if (profile.open && !profile.contains(event.target)) profile.open = false;
   });
 }
+
+const tokenDialog = document.querySelector('[data-token-dialog]');
+if (tokenDialog?.showModal) {
+  tokenDialog.removeAttribute('open');
+  tokenDialog.showModal();
+  tokenDialog.addEventListener('cancel', event => {
+    event.preventDefault();
+    tokenDialog.querySelector('.actions a')?.click();
+  });
+}
+const copyToken = document.querySelector('[data-copy-token]');
+if (copyToken) {
+  copyToken.addEventListener('click', async () => {
+    const input = document.getElementById('new-token');
+    const status = document.querySelector('[data-copy-status]');
+    try {
+      await navigator.clipboard.writeText(input.value);
+      status.textContent = copyToken.dataset.copied;
+    } catch {
+      input.focus();
+      input.select();
+      status.textContent = copyToken.dataset.copyFailed;
+    }
+  });
+}

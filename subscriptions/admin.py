@@ -1,7 +1,6 @@
-import hashlib
-import secrets
 from django.contrib import admin
 from .models import Hotel, Installation, License
+from .token_service import rotate_sync_token, TokenConflict
 
 admin.site.site_header = 'إدارة اشتراكات OMDA'
 admin.site.register(Hotel)
@@ -12,12 +11,17 @@ class InstallationAdmin(admin.ModelAdmin):
 
     @admin.action(permissions=['change'], description='إصدار أو استبدال رمز المزامنة')
     def rotate_sync_token(self, request, queryset):
-        if not request.user.is_superuser or queryset.count() != 1:
+        items = list(queryset[:2])
+        if not request.user.is_superuser or len(items) != 1:
             self.message_user(request, 'يلزم حساب مدير النظام واختيار تثبيت واحد.')
             return
-        token = secrets.token_urlsafe(32)
-        queryset.update(sync_token_hash=hashlib.sha256(token.encode()).hexdigest())
-        self.message_user(request, f'انسخ الرمز الآن: {token}')
+        try:
+            token = rotate_sync_token(request.user, items[0])
+        except TokenConflict:
+            self.message_user(request, 'Token changed. Reload and try again.', level='error')
+            return
+        from .views import token_result
+        return token_result(request, token, items[0])
 
 @admin.register(License)
 class LicenseAdmin(admin.ModelAdmin):

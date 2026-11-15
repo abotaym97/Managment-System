@@ -60,10 +60,7 @@ def hotel_directory(request):
 @staff_member_required(login_url="login")
 def detail(request, pk):
     hotel = get_object_or_404(Hotel.objects.prefetch_related('installations__licenses'), pk=pk)
-    token = None
     if request.method == 'POST':
-        import hashlib
-        import secrets
         from django.core.exceptions import PermissionDenied
         if not request.user.is_superuser:
             raise PermissionDenied
@@ -71,9 +68,8 @@ def detail(request, pk):
         if request.POST.get("action") == "sync":
             hotel.installations.filter(pk=selected.pk).update(sync_requested_at=timezone.now())
             return redirect("hotel-detail", pk=hotel.pk)
-        token = secrets.token_urlsafe(32)
-        hotel.installations.filter(pk=selected.pk).update(sync_token_hash=hashlib.sha256(token.encode()).hexdigest())
-    response = render(request, 'subscriptions/detail.html', {'hotel': hotel, 'token': token})
+        return redirect("installation-token", pk=selected.pk)
+    response = render(request, 'subscriptions/detail.html', {'hotel': hotel})
     response['Cache-Control'] = 'private, no-store'
     return response
 
@@ -175,3 +171,33 @@ def system_administration(request):
     if not apps:
         raise PermissionDenied
     return render(request, 'subscriptions/system.html', {'apps':apps})
+
+
+def token_result(request, token, installation):
+    from django.views.decorators.cache import add_never_cache_headers
+    response = render(request, 'subscriptions/installation-token.html',
+                      {'item':installation, 'new_token':token})
+    add_never_cache_headers(response)
+    return response
+
+
+@staff_member_required(login_url="login")
+def installation_token(request, pk):
+    from django.core.exceptions import PermissionDenied
+    from django.views.decorators.cache import add_never_cache_headers
+    from .token_service import rotate_sync_token, token_revision, TokenConflict
+    if not request.user.is_superuser or not request.user.has_perm('subscriptions.change_installation'):
+        raise PermissionDenied
+    item = get_object_or_404(Installation.objects.select_related('hotel'), pk=pk)
+    conflict = False
+    if request.method == 'POST':
+        try:
+            token = rotate_sync_token(request.user, item, revision=request.POST.get('revision', ''))
+        except TokenConflict:
+            conflict = True
+        else:
+            return token_result(request, token, item)
+    response = render(request, 'subscriptions/installation-token.html',
+                      {'item':item,'revision':token_revision(item),'conflict':conflict}, status=409 if conflict else 200)
+    add_never_cache_headers(response)
+    return response

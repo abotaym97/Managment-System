@@ -1,0 +1,16 @@
+{% extends 'subscriptions/base.html' %}{% block body %}
+<a href="{% url 'installations' %}">{% if ar %}بيئات التشغيل{% else %}Installations{% endif %}</a>
+<dialog class="token-dialog" data-token-dialog open aria-labelledby="token-title">
+<h1 id="token-title">{% if new_token %}{% if ar %}تم إصدار رمز المزامنة{% else %}Synchronization Token Issued{% endif %}{% elif item.sync_token_hash %}{% if ar %}استبدال رمز المزامنة{% else %}Replace Synchronization Token{% endif %}{% else %}{% if ar %}إصدار رمز المزامنة{% else %}Generate Synchronization Token{% endif %}{% endif %}</h1>
+<p><bdi>{{ item.hotel.name }}</bdi> · <bdi translate="no">{{ item.identifier }}</bdi></p>
+{% if conflict %}<p class="token-warning" role="alert">{% if ar %}تغيّر الرمز منذ فتح الصفحة. راجع الحالة وحاول مجددًا.{% else %}The token changed since you opened this page. Review the current state before trying again.{% endif %}</p>{% endif %}
+{% if new_token %}
+<p>{% if ar %}انسخ الرمز الآن. إذا فقدته، يلزم إصدار رمز بديل.{% else %}Copy this token now. If you lose it, you must issue a replacement.{% endif %}</p>
+<label for="new-token">{% if ar %}رمز المزامنة الجديد{% else %}New Synchronization Token{% endif %}</label>
+<input id="new-token" value="{{ new_token }}" type="text" readonly dir="ltr" translate="no" spellcheck="false" autocomplete="off">
+<p>{% if ar %}حدّث قيمة{% else %}Update{% endif %} <code translate="no">OMDA_MANAGEMENT_TOKEN</code> {% if ar %}في باكند الفندق بهذا الرمز.{% else %}on the hotel backend with this token.{% endif %}</p>
+<div class="actions"><button type="button" data-copy-token data-copied="{% if ar %}تم نسخ الرمز.{% else %}Token copied.{% endif %}" data-copy-failed="{% if ar %}انسخ النص المحدد يدويًا.{% else %}Copy the selected text manually.{% endif %}">{% if ar %}نسخ الرمز{% else %}Copy Token{% endif %}</button><a href="{% url 'installations' %}">{% if ar %}تم{% else %}Done{% endif %}</a></div><p data-copy-status role="status"></p>
+{% else %}
+{% if item.sync_token_hash %}<p class="token-warning">{% if ar %}إصدار رمز بديل يلغي الرمز الحالي فورًا. تتوقف المزامنة إلى أن تحدّث الرمز في باكند الفندق.{% else %}Replacing the token immediately invalidates the current one. Sync may stop until the hotel backend is updated.{% endif %}</p>{% endif %}
+<form method="post" class="actions" action="{% url 'installation-token' item.pk %}">{% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}"><button type="submit">{% if item.sync_token_hash %}{% if ar %}تأكيد الاستبدال{% else %}Confirm Replacement{% endif %}{% else %}{% if ar %}إصدار الرمز{% else %}Generate Token{% endif %}{% endif %}</button><a href="{% url 'installations' %}">{% if ar %}إلغاء{% else %}Cancel{% endif %}</a></form>
+{% endif %}</dialog>{% endblock %}

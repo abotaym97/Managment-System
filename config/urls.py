@@ -9,6 +9,7 @@ urlpatterns = [
     path('manage/<str:kind>/<int:pk>/', views.editor, name='record-edit'),
     path('', views.dashboard, name='dashboard'),
     path('hotels/', views.hotel_directory, name='hotels'),
+    path('installations/<int:pk>/token/', views.installation_token, name='installation-token'),
     path('installations/', views.installation_register, name='installations'),
     path('licenses/<int:pk>/', views.license_detail, name='license-detail'),
     path('system/', views.system_administration, name='system'),

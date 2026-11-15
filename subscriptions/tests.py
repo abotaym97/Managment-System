@@ -62,3 +62,42 @@ class WorkspaceAuthenticationTests(TestCase):
         self.assertContains(self.client.get('/installations/'), 'Installations')
         self.assertEqual(self.client.get('/system/').status_code, 200)
         self.assertEqual(self.client.get('/manage/installation/new/').status_code, 403)
+
+    def test_installation_token_is_one_time_hash_only_and_replacement_revokes_access(self):
+        import hashlib
+        from django.contrib.auth import get_user_model
+        from django.test import Client
+        from .token_service import token_revision
+        User = get_user_model()
+        admin = User.objects.create_superuser('token-admin')
+        staff = User.objects.create_user('token-staff', is_staff=True)
+        hotel = Hotel.objects.create(name='Token test')
+        item = Installation.objects.create(hotel=hotel, identifier=uuid.uuid4())
+        path = f'/installations/{item.pk}/token/'
+        report = f'/api/installations/{item.identifier}/report/'
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(staff)
+        self.assertEqual(client.get(path).status_code, 403)
+        client.force_login(admin)
+        self.assertEqual(client.post(path, {'revision': token_revision(item)}).status_code, 403)
+        initial = client.get(path)
+        revision = token_revision(item)
+        csrf = client.cookies['csrftoken'].value
+        data = {'revision': revision, 'csrfmiddlewaretoken': csrf}
+        result = client.post(path, data)
+        self.assertEqual(result.status_code, 200)
+        self.assertIn('no-store', result['Cache-Control'])
+        token = result.context['new_token']
+        item.refresh_from_db()
+        self.assertEqual(item.sync_token_hash, hashlib.sha256(token.encode()).hexdigest())
+        self.assertNotContains(client.get(path), token)
+        self.assertNotContains(client.get('/installations/'), token)
+        conflict = client.post(path, data)
+        self.assertEqual(conflict.status_code, 409)
+        self.assertNotContains(conflict, token, status_code=409)
+        self.assertEqual(client.get(report, HTTP_AUTHORIZATION=f'Bearer {token}').status_code, 200)
+        data['revision'] = token_revision(item)
+        replacement = client.post(path, data).context['new_token']
+        self.assertNotEqual(replacement, token)
+        self.assertEqual(client.get(report, HTTP_AUTHORIZATION=f'Bearer {token}').status_code, 401)
+        self.assertEqual(client.get(report, HTTP_AUTHORIZATION=f'Bearer {replacement}').status_code, 200)
