@@ -101,3 +101,19 @@ class WorkspaceAuthenticationTests(TestCase):
         self.assertNotEqual(replacement, token)
         self.assertEqual(client.get(report, HTTP_AUTHORIZATION=f'Bearer {token}').status_code, 401)
         self.assertEqual(client.get(report, HTTP_AUTHORIZATION=f'Bearer {replacement}').status_code, 200)
+
+    def test_installations_include_searchable_hotels_without_installation(self):
+        from django.contrib.auth import get_user_model
+        manager = get_user_model().objects.create_superuser('installations-list-admin')
+        self.client.force_login(manager)
+        hotel = Hotel.objects.create(name='Hotel without installation')
+        linked = Hotel.objects.create(name='Linked hotel')
+        installation = Installation.objects.create(hotel=linked, identifier=uuid.uuid4())
+        response = self.client.get('/installations/')
+        self.assertContains(response, str(installation.identifier))
+        self.assertContains(response, f'?hotel={hotel.pk}')
+        response = self.client.get('/installations/', {'q':'without installation'})
+        self.assertContains(response, 'No installation')
+        self.assertNotContains(response, str(installation.identifier))
+        form = self.client.get('/manage/installation/new/', {'hotel':hotel.pk}).context['form']
+        self.assertEqual(str(form['hotel'].value()), str(hotel.pk))

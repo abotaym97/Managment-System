@@ -130,11 +130,27 @@ def search_term(request):
 
 @staff_member_required(login_url="login")
 def installation_register(request):
+    from django.core.exceptions import PermissionDenied
+    from django.core.paginator import Paginator
     from django.db.models import Q
-    records = Installation.objects.select_related('hotel').order_by('hotel__name', 'pk')
+    if not request.user.has_perm('subscriptions.view_installation'):
+        raise PermissionDenied
     term = search_term(request)
-    return register(request, records, 'installation', Q(identifier__icontains=term) |
-                    Q(hotel__name__icontains=term) | Q(deployment_branch__icontains=term))
+    records = Installation.objects.select_related('hotel')
+    unconfigured = Hotel.objects.filter(installations__isnull=True)
+    if term:
+        records = records.filter(Q(identifier__icontains=term) | Q(hotel__name__icontains=term) |
+                                 Q(deployment_branch__icontains=term))
+        unconfigured = unconfigured.filter(name__icontains=term)
+    rows = [{'hotel': item.hotel, 'item': item} for item in records]
+    rows.extend({'hotel': hotel, 'item': None} for hotel in unconfigured)
+    rows.sort(key=lambda row: (row['hotel'].name.casefold(), row['hotel'].pk, row['item'].pk if row['item'] else 0))
+    query = request.GET.copy()
+    query.pop('page', None)
+    return render(request, 'subscriptions/installations.html', {
+        'page': Paginator(rows, 30).get_page(request.GET.get('page')),
+        'query': term, 'page_query': query.urlencode(),
+    })
 
 
 def register(request, records, kind, search):

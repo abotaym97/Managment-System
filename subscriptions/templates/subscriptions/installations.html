@@ -1,6 +1,34 @@
 {% extends 'subscriptions/base.html' %}{% block body %}
 <div class="heading page-heading"><h1>{% if ar %}بيئات التشغيل{% else %}Installations{% endif %}</h1>{% if perms.subscriptions.add_installation %}<a class="button" href="{% url 'record-add' 'installation' %}">{% if ar %}إضافة بيئة{% else %}Add Installation{% endif %}</a>{% endif %}</div>
-<p class="onboarding-note">{% if ar %}أنشئ الفندق أولاً، ثم أضف بيئة التشغيل وأصدر رمزًا لتضبطه في خادم الفندق.{% else %}Create the hotel first, then add its installation and configure the issued token on the hotel backend.{% endif %}</p><section class="directory"><div class="directory-head"><form method="get" class="filters"><label>{% if ar %}بحث{% else %}Search{% endif %}<input name="q" type="search" value="{{ query }}" autocomplete="off"></label><button>{% if ar %}بحث{% else %}Search{% endif %}</button></form></div>
-<div class="table" tabindex="0" role="region" aria-label="{% if ar %}جدول البيئات{% else %}Installation table{% endif %}"><table>
-<thead><tr><th scope="col">{% if ar %}الفندق{% else %}Hotel{% endif %}</th><th scope="col">{% if ar %}المعرّف{% else %}Installation ID{% endif %}</th><th scope="col">{% if ar %}الفروع النشطة{% else %}Active Branches{% endif %}</th><th scope="col">{% if ar %}آخر مزامنة{% else %}Last Sync{% endif %}</th><th scope="col">{% if ar %}المزامنة{% else %}Synchronization{% endif %}</th><th scope="col">{% if ar %}الإجراءات{% else %}Actions{% endif %}</th></tr></thead>
-<tbody>{% for item in page %}<tr><th scope="row"><a href="{% url 'hotel-detail' item.hotel_id %}#installation-{{ item.pk }}"><bdi>{{ item.hotel.name }}</bdi></a></th><td><bdi translate="no">{{ item.identifier }}</bdi></td><td>{{ item.active_branches|default_if_none:"—" }}</td><td>{{ item.last_sync_at|date:"DATETIME_FORMAT"|default:"—" }}</td><td>{% include 'subscriptions/sync-status.html' %}</td><td><div class="actions installation-actions">{% if perms.subscriptions.change_installation %}<a href="{% url 'record-edit' 'installation' item.pk %}">{% if ar %}تعديل{% else %}Edit{% endif %}</a>{% endif %}{% if perms.subscriptions.delete_installation %} · <a href="{% url 'admin:subscriptions_installation_delete' item.pk %}">{% if ar %}حذف{% else %}Delete{% endif %}</a>{% endif %}<a href="{% url 'hotel-detail' item.hotel_id %}#installation-{{ item.pk }}">{% if ar %}التفاصيل{% else %}Details{% endif %}</a>{% if user.is_superuser and perms.subscriptions.change_installation %}<a class="button" href="{% url 'installation-token' item.pk %}">{% if item.sync_token_hash %}{% if ar %}استبدال الرمز{% else %}Replace Token{% endif %}{% else %}{% if ar %}إصدار رمز{% else %}Generate Token{% endif %}{% endif %}</a>{% endif %}</div></td></tr>{% empty %}<tr><td colspan="6">{% if ar %}لا توجد بيئات مطابقة.{% else %}No matching installations.{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% include 'subscriptions/pagination.html' %}</section>{% endblock %}
+<p class="onboarding-note">{% if ar %}أنشئ الفندق أولاً، ثم أضف بيئة التشغيل وأصدر رمزًا لتضبطه في خادم الفندق.{% else %}Create the hotel first, then add its installation and configure the issued token on the hotel backend.{% endif %}</p><section class="directory installation-directory"><div class="directory-head"><form method="get" class="filters"><label>{% if ar %}بحث{% else %}Search{% endif %}<input name="q" type="search" value="{{ query }}" autocomplete="off"></label><button>{% if ar %}بحث{% else %}Search{% endif %}</button></form></div>
+<div class="installation-register">
+<div class="installation-columns" aria-hidden="true">
+<span>{% if ar %}الفندق وبيئة التشغيل{% else %}Hotel & Installation{% endif %}</span>
+<span>{% if ar %}الفروع{% else %}Branches{% endif %}</span>
+<span>{% if ar %}حالة المزامنة{% else %}Sync Status{% endif %}</span>
+<span>{% if ar %}آخر تقرير{% else %}Last Report{% endif %}</span><span></span>
+</div>
+<ul class="installation-list">
+{% for row in page %}{% with item=row.item %}
+<li class="installation-row">
+<div class="installation-identity">
+ <span class="installation-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8h5V3h11v18M2 21h20M12 7h4m-4 4h4m-4 4h4"/></svg></span>
+ <div><a href="{% url 'hotel-detail' row.hotel.pk %}{% if item %}#installation-{{ item.pk }}{% endif %}"><bdi>{{ row.hotel.name }}</bdi></a>
+ {% if item %}<bdi class="installation-id" translate="no">{{ item.identifier }}</bdi>{% endif %}</div>
+</div>
+<div class="installation-branches"><span class="installation-mobile-label">{% if ar %}الفروع النشطة{% else %}Active Branches{% endif %}</span><strong>{% if item %}{{ item.active_branches|default_if_none:"—" }}{% else %}—{% endif %}</strong></div>
+<div class="installation-sync">{% if item %}{% include 'subscriptions/sync-status.html' %}{% else %}<span class="state">{% if ar %}لا توجد بيئة تشغيل{% else %}No installation{% endif %}</span>{% endif %}</div>
+<div class="installation-date"><span class="installation-mobile-label">{% if ar %}آخر تقرير{% else %}Last Report{% endif %}</span>{% if item.last_sync_at %}<time datetime="{{ item.last_sync_at|date:'c' }}">{{ item.last_sync_at|date:"DATETIME_FORMAT" }}</time>{% else %}—{% endif %}</div>
+<div class="installation-controls">
+{% if item %}
+<details class="installation-menu" data-installation-menu><summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01m7 0h.01m7 0h.01" stroke-width="3"/></svg><span>{% if ar %}الإجراءات{% else %}Actions{% endif %}</span></summary>
+<div class="installation-menu-panel">
+<a href="{% url 'hotel-detail' item.hotel_id %}#installation-{{ item.pk }}">{% if ar %}عرض التفاصيل{% else %}View Details{% endif %}</a>
+{% if perms.subscriptions.change_installation %}<a href="{% url 'record-edit' 'installation' item.pk %}">{% if ar %}تعديل البيئة{% else %}Edit Installation{% endif %}</a>{% endif %}
+{% if user.is_superuser and perms.subscriptions.change_installation %}<a href="{% url 'installation-token' item.pk %}">{% if item.sync_token_hash %}{% if ar %}استبدال الرمز{% else %}Replace Token{% endif %}{% else %}{% if ar %}إصدار رمز{% else %}Generate Token{% endif %}{% endif %}</a>{% endif %}
+{% if perms.subscriptions.delete_installation %}<a class="installation-delete" href="{% url 'admin:subscriptions_installation_delete' item.pk %}">{% if ar %}حذف البيئة{% else %}Delete Installation{% endif %}</a>{% endif %}
+</div></details>
+{% elif perms.subscriptions.add_installation %}<a class="button" href="{% url 'record-add' 'installation' %}?hotel={{ row.hotel.pk }}">{% if ar %}إضافة بيئة تشغيل{% else %}Add Installation{% endif %}</a>{% endif %}
+</div></li>
+{% endwith %}{% empty %}<li class="empty">{% if ar %}لا توجد فنادق أو بيئات مطابقة.{% else %}No matching hotels or installations.{% endif %}</li>{% endfor %}
+</ul></div>{% include 'subscriptions/pagination.html' %}</section>{% endblock %}

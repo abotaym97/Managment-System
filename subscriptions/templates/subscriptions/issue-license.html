@@ -1,0 +1,43 @@
+{% extends 'subscriptions/base.html' %}
+{% block body %}
+<div class="page-heading"><h1>{% if ar %}إصدار مفتاح ترخيص{% else %}Issue License Key{% endif %}</h1></div>
+{% if issued_token %}
+<section class="card issue-result" data-issue-result>
+  <p role="status"><strong>{% if ar %}تم إصدار الترخيص وحفظ سجله.{% else %}License key issued and recorded.{% endif %}</strong></p>
+  <p>{% if ar %}انسخ المفتاح الآن والصقه في إعدادات الترخيص في نظام الفندق لتفعيله. يُعرض المفتاح مرة واحدة.{% else %}Copy the key now and paste it into the hotel system’s License settings to activate it. The key is shown once.{% endif %}</p>
+  <label for="new-token">{% if ar %}مفتاح الترخيص{% else %}License key{% endif %}</label>
+  <textarea id="new-token" dir="ltr" rows="4" readonly spellcheck="false">{{ issued_token }}</textarea>
+  <div class="actions"><button type="button" data-copy-token data-copied="{% if ar %}تم النسخ{% else %}Copied{% endif %}" data-copy-failed="{% if ar %}حدد المفتاح وانسخه يدويًا.{% else %}Select and copy the key manually.{% endif %}">{% if ar %}نسخ المفتاح{% else %}Copy Key{% endif %}</button>
+  <a href="{% url 'licenses' %}">{% if ar %}العودة للتراخيص{% else %}Back to Licenses{% endif %}</a></div>
+  <p role="status" data-copy-status></p>
+</section>
+{% else %}
+<form method="post" data-editor data-issuer data-today="{{ today }}" class="card issuer-form">
+  {% csrf_token %}
+  <input type="hidden" name="submission" value="{{ submission }}">
+  {{ form.non_field_errors }}
+  {% if not issuer_configured %}<p role="status">{% if ar %}مفتاح التوقيع غير مهيأ على الخادم. تواصل مع مسؤول النظام لتهيئته.{% else %}The signing key is not configured on the server. Contact your system administrator to configure it.{% endif %}</p>{% endif %}
+  <div class="issuer-grid">
+    <fieldset><legend>{% if ar %}الفندق والتوقيع{% else %}Hotel and Signing{% endif %}</legend>
+      {{ form.installation.as_field_group }}
+      <p class="issuer-installation-id muted" data-installation-identifier hidden>
+        {% if ar %}معرّف النظام{% else %}Installation ID{% endif %}
+        <output data-issuer-id dir="ltr"></output>
+      </p>
+      <p class="muted">{% if ar %}اختر الفندق ومعرّف النظام من بيئات التشغيل المسجلة. تجد المعرّف في إعدادات الترخيص لدى الفندق.{% else %}Select the hotel and installation ID from registered installations. The ID appears in the hotel system’s License settings.{% endif %}</p>
+      {{ form.customer.as_field_group }}
+      <p class="muted">{% if ar %}اترك الحقل فارغًا لاستخدام اسم الفندق المسجّل.{% else %}Leave blank to use the registered hotel name.{% endif %}</p>
+      {{ form.branch_limit.as_field_group }}
+    </fieldset>
+    <fieldset><legend>{% if ar %}الاشتراك{% else %}Subscription{% endif %}</legend>
+      {{ form.plan.as_field_group }}
+      <div class="issuer-pair" data-issuer-duration><div>{{ form.duration.as_field_group }}</div><div>{{ form.unit.as_field_group }}</div></div>
+      <div class="issuer-pair issuer-date"><div>{{ form.starts_on.as_field_group }}</div><button type="button" data-issuer-today hidden>{% if ar %}اليوم{% else %}Today{% endif %}</button></div>
+      <div class="issuer-expiry"><span>{% if ar %}تاريخ الانتهاء{% else %}End date{% endif %}</span><output data-issuer-end aria-live="polite" dir="ltr">—</output></div>
+      <div class="issuer-pair"><div>{{ form.warning_days.as_field_group }}</div><div>{{ form.grace_days.as_field_group }}</div></div>
+    </fieldset>
+  </div>
+  <div class="actions"><button type="submit"{% if not issuer_configured %} disabled{% endif %}>{% if ar %}إصدار المفتاح{% else %}Issue Key{% endif %}</button><a href="{% url 'licenses' %}">{% if ar %}إلغاء{% else %}Cancel{% endif %}</a></div>
+</form>
+{% endif %}
+{% endblock %}
